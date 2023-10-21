@@ -17,21 +17,17 @@
             height: 60px;
             border-radius: 50%;
         }
-
         .agent-name {
             text-align: center;
         }
-
         .agent-item {
             display: flex;
             flex-direction: column;
             align-items: center;
         }
-
         .agent-choices {
             display: none;
         }
-
         .btn-show {
             display: none;
         }
@@ -40,22 +36,6 @@
 
 <body>
 
-<section class="landing">
-    <div class="max-w-5xl mx-auto text-center">
-        <h1 class="text-4xl font-extrabold mx-auto lg:text-7xl">
-            Say Goodbye to <br>
-            <span
-                    style="background-image:linear-gradient(to right, #9867F0, #ED4E50); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Hours
-                    of Research</span>
-        </h1>
-        <p class="max-w-5xl mx-auto text-gray-600 mt-8" style="font-size:20px">
-            Say Hello to GPT Researcher, your AI mate for rapid insights and comprehensive research. GPT Researcher
-            takes care of everything from accurate source gathering to organization of research results - all in one
-            platform designed to make your research process a breeze.
-        </p>
-        <a href="#form" class="btn btn-primary">Get Started</a>
-    </div>
-</section>
 
 <main class="container" id="form">
     <div class="agent-item"><img src="/static/defaultAgentAvatar.JPG" class="avatar"
@@ -68,8 +48,6 @@
         </div>
         <div class="form-group">
             <div class="row">
-
-
             </div>
             <button type="button" id="btnShowAuto" class="btn btn-secondary mt-3 btn-show">Auto Agent</button>
         </div>
@@ -80,6 +58,15 @@
                 <option value="resource_report">Resource Report</option>
                 <option value="outline_report">Outline Report</option>
             </select>
+            <input type="file" id="fileInput" multiple accept=".pdf,.txt">
+            <label>
+                Web Search: 
+                <input type="checkbox" id="webToggle" checked>
+            </label>
+            <label>
+                Use Knowledge Base: 
+                <input type="checkbox" id="kbToggle" checked>
+            </label>
         </div>
         <input type="submit" value="Research" class="btn btn-primary button-padding">
     </form>
@@ -109,19 +96,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/1.9.1/showdown.min.js"></script>
 <script src="/site/scripts.js"></script>
 <script>
-    // const btnChoose = document.getElementById('btnChoose');
     const btnShowAuto = document.getElementById('btnShowAuto');
     const autoAgentDiv = document.getElementById('autoAgentDiv');
     const agentChoices = document.getElementsByClassName('agent-choices');
-
-    /**
-    btnChoose.addEventListener('click', function () {
-        btnShowAuto.style.display = 'inline-block';
-        btnChoose.style.display = 'none';
-        autoAgentDiv.style.display = 'none';
-        agentChoices[0].style.display = 'flex';
-    });
-    **/
 
     btnShowAuto.addEventListener('click', function () {
         btnShowAuto.style.display = 'none';
