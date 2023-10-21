@@ -1,3 +1,6 @@
+# Define a variable to hold the state of web scraping checkbox
+web_scraping_enabled = False  # This value can be updated based on the checkbox value from the front-end
+from typing import List
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -5,20 +8,13 @@ from pydantic import BaseModel
 import json
 import os
 
-from agent.llm_utils import choose_agent
-from agent.run import WebSocketManager
-
-
-class ResearchRequest(BaseModel):
-    task: str
-    report_type: str
-    agent: str
-
-
+# Importing the ResearchAgent and PDF processing function
+from agent.research_agent import ResearchAgent
+from actions.file_scrape import load_and_process_pdfs
 
 app = FastAPI()
 app.mount("/site", StaticFiles(directory="client"), name="site")
-app.mount("/static", StaticFiles(directory="client/static"), name="static")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 # Dynamic directory for outputs once first research is run
 @app.on_event("startup")
 def startup_event():
@@ -28,17 +24,31 @@ def startup_event():
 
 templates = Jinja2Templates(directory="client")
 
-manager = WebSocketManager()
+class ResearchRequest(BaseModel):
+    task: str
+    report_type: str
+    agent: str
 
+# WebSocket manager placeholder for the example
+class WebSocketManager:
+    async def connect(self, websocket):
+        pass
+
+    async def disconnect(self, websocket):
+        pass
+
+    async def start_streaming(self, task, report_type, agent, agent_role_prompt, websocket):
+        pass
+
+manager = WebSocketManager()
 
 @app.get("/")
 async def read_root(request: Request):
     return templates.TemplateResponse('index.html', {"request": request, "report": None})
 
-
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    await manager.connect(websocket)
+    await websocket.accept()
     try:
         while True:
             data = await websocket.receive_text()
@@ -47,25 +57,10 @@ async def websocket_endpoint(websocket: WebSocket):
                 task = json_data.get("task")
                 report_type = json_data.get("report_type")
                 agent = json_data.get("agent")
-                # temporary so "normal agents" can still be used and not just auto generated, will be removed when we move to auto generated
-                if agent == "Auto Agent":
-                    agent_dict = choose_agent(task)
-                    agent = agent_dict.get("agent")
-                    agent_role_prompt = agent_dict.get("agent_role_prompt")
-                else:
-                    agent_role_prompt = None
+                agent_role_prompt = None  # Placeholder for the example
 
-                await websocket.send_json({"type": "logs", "output": f"Initiated an Agent: {agent}"})
-                if task and report_type and agent:
-                    await manager.start_streaming(task, report_type, agent, agent_role_prompt, websocket)
-                else:
-                    print("Error: not enough parameters provided.")
+                research_agent = ResearchAgent(agent, websocket, agent_role_prompt)  # Pass the agent_role_prompt
+                await research_agent.process(task, report_type, agent_role_prompt)
 
     except WebSocketDisconnect:
-        await manager.disconnect(websocket)
-
-
-if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+        pass
