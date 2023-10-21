@@ -35,78 +35,76 @@
 </head>
 
 <body>
-
-
-<main class="container" id="form">
-    <div class="agent-item"><img src="/static/defaultAgentAvatar.JPG" class="avatar"
-                                                alt="Auto Agent"></div>
-    <form method="POST" class="mt-3" onsubmit="GPTResearcher.startResearch(); return false;">
-        <div class="form-group">
-            <label for="task" class="agent-question">What would you like me to research next?</label>
-            <input type="text" id="task" name="task" class="form-control" required>
-            <input type="radio" name="agent" id="autoAgent" value="Auto Agent" checked hidden>
+    <main class="container" id="form">
+        <div class="agent-item">
+            <img src="/static/defaultAgentAvatar.JPG" class="avatar" alt="Auto Agent">
         </div>
-        <div class="form-group">
-            <div class="row">
+        <form method="POST" class="mt-3" onsubmit="GPTResearcher.startResearch(); return false;">
+            <div class="form-group">
+                <label for="task" class="agent-question">What would you like me to research next?</label>
+                <input type="text" id="task" name="task" class="form-control" required>
+                <input type="radio" name="agent" id="autoAgent" value="Auto Agent" checked hidden>
             </div>
-            <button type="button" id="btnShowAuto" class="btn btn-secondary mt-3 btn-show">Auto Agent</button>
+            <div class="form-group">
+                <div class="row">
+                </div>
+                <button type="button" id="btnShowAuto" class="btn btn-secondary mt-3 btn-show">Auto Agent</button>
+            </div>
+            <div class="form-group">
+                <label for="report_type" class="agent-question">What type of report would you like me to generate?</label>
+                <select name="report_type" class="form-control" required>
+                    <option value="research_report">Research Report</option>
+                    <option value="resource_report">Resource Report</option>
+                    <option value="outline_report">Outline Report</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="fileInput">Upload PDF files for research:</label>
+                <input type="file" id="fileInput" multiple accept=".pdf,.txt">
+            </div>
+            <div class="form-group">
+                <label>
+                    Web Search: 
+                    <input type="checkbox" id="webToggle" checked>
+                </label>
+                <label>
+                    Use Knowledge Base: 
+                    <input type="checkbox" id="kbToggle" checked>
+                </label>
+            </div>
+            <input type="submit" value="Research" class="btn btn-primary button-padding">
+        </form>
+
+        <div class="margin-div">
+            <h2>Agent Output</h2>
+            <p class="mt-2 text-left" style="font-size: 0.8rem;">An agent tailored specifically to your task will be generated to provide the most precise and relevant research results.</p>
+            <div id="output"></div>
         </div>
-        <div class="form-group">
-            <label for="report_type" class="agent-question">What type of report would you like me to generate?</label>
-            <select name="report_type" class="form-control" required>
-                <option value="research_report">Research Report</option>
-                <option value="resource_report">Resource Report</option>
-                <option value="outline_report">Outline Report</option>
-            </select>
-            <input type="file" id="fileInput" multiple accept=".pdf,.txt">
-            <label>
-                Web Search: 
-                <input type="checkbox" id="webToggle" checked>
-            </label>
-            <label>
-                Use Knowledge Base: 
-                <input type="checkbox" id="kbToggle" checked>
-            </label>
+        <div class="margin-div">
+            <h2>Research Report</h2>
+            <div id="reportContainer"></div>
+            <div id="reportActions">
+                <div class="alert alert-info" role="alert" id="status"></div>
+                <a onclick="GPTResearcher.copyToClipboard()" class="btn btn-secondary mt-3">Copy to clipboard</a>
+                <a id="downloadLink" href="#" class="btn btn-secondary mt-3" target="_blank">Download as PDF</a>
+            </div>
         </div>
-        <input type="submit" value="Research" class="btn btn-primary button-padding">
-    </form>
+    </main>
 
-    <div class="margin-div">
-        <h2>Agent Output</h2>
-        <p class="mt-2 text-left" style="font-size: 0.8rem;">An agent tailored specifically to your task
-                        will be generated to provide the most precise and relevant research results.</p>
-        <div id="output"></div>
-    </div>
-    <div class="margin-div">
-        <h2>Research Report</h2>
-        <div id="reportContainer"></div>
-        <div id="reportActions">
-            <div class="alert alert-info" role="alert" id="status"></div>
-            <a onclick="GPTResearcher.copyToClipboard()" class="btn btn-secondary mt-3">Copy to clipboard</button>
-            <a id="downloadLink" href="#" class="btn btn-secondary mt-3" target="_blank">Download as PDF</a>
-        </div>
-    </div>
-</main>
 
-<footer>
-    <p>GPT Researcher &copy; 2023 | <a target="_blank" href="https://github.com/assafelovic/gpt-researcher">GitHub
-        Page</a></p>
-</footer>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/1.9.1/showdown.min.js"></script>
+    <script src="/site/scripts.js"></script>
+    <script>
+        const btnShowAuto = document.getElementById('btnShowAuto');
+        const autoAgentDiv = document.getElementById('autoAgentDiv');
+        const agentChoices = document.getElementsByClassName('agent-choices');
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/1.9.1/showdown.min.js"></script>
-<script src="/site/scripts.js"></script>
-<script>
-    const btnShowAuto = document.getElementById('btnShowAuto');
-    const autoAgentDiv = document.getElementById('autoAgentDiv');
-    const agentChoices = document.getElementsByClassName('agent-choices');
-
-    btnShowAuto.addEventListener('click', function () {
-        btnShowAuto.style.display = 'none';
-        btnChoose.style.display = 'inline-block';
-        autoAgentDiv.style.display = 'flex';
-        agentChoices[0].style.display = 'none';
-    });
-</script>
+        btnShowAuto.addEventListener('click', function () {
+            btnShowAuto.style.display = 'none';
+            btnChoose.style.display = 'inline-block';
+            autoAgentDiv.style.display = 'flex';
+            agentChoices[0].style.display = 'none';
+        });
+    </script>
 </body>
-
 </html>

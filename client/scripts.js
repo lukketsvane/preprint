@@ -1,150 +1,65 @@
-const GPTResearcher = (() => {
-    const init = () => {
-      // Not sure, but I think it would be better to add event handlers here instead of in the HTML
-      //document.getElementById("startResearch").addEventListener("click", startResearch);
-      //document.getElementById("copyToClipboard").addEventListener("click", copyToClipboard);
+const GPTResearcher = {
+  ws: null,
+  startResearch: function () {
+      // Connect to WebSocket
+      this.ws = new WebSocket("ws://localhost:8000/ws");
 
-      updateState("initial");
-    }
+      this.ws.addEventListener('open', () => {
+          console.log("WebSocket connection opened.");
 
-    const startResearch = () => {
-      document.getElementById("output").innerHTML = "";
-      document.getElementById("reportContainer").innerHTML = "";
-      updateState("in_progress")
-  
-      addAgentResponse({ output: "🤔 Thinking about research questions for the task..." });
-  
-      listenToSockEvents();
-    };
-  
-    const listenToSockEvents = () => {
-      const { protocol, host, pathname } = window.location;
-      const ws_uri = `${protocol === 'https:' ? 'wss:' : 'ws:'}//${host}${pathname}ws`;
-      const converter = new showdown.Converter();
-      const socket = new WebSocket(ws_uri);
-  
-      socket.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        if (data.type === 'logs') {
-          addAgentResponse(data);
-        } else if (data.type === 'report') {
-          writeReport(data, converter);
-        } else if (data.type === 'path') {
-          updateState("finished")
-          updateDownloadLink(data);
+          // Collect the form data
+          let task = document.getElementById("task").value;
+          let agent = document.querySelector('input[name="agent"]:checked').value;
+          let report_type = document.querySelector('select[name="report_type"]').value;
+          let webToggle = document.getElementById("webToggle").checked;
+          let kbToggle = document.getElementById("kbToggle").checked;
 
-        }
-      };
-  
-      socket.onopen = (event) => {
-        const task = document.querySelector('input[name="task"]').value;
-        const report_type = document.querySelector('select[name="report_type"]').value;
-        const agent = document.querySelector('input[name="agent"]:checked').value;
-  
-        const requestData = {
-          task: task,
-          report_type: report_type,
-          agent: agent,
-        };
-  
-        socket.send(`start ${JSON.stringify(requestData)}`);
-      };
-    };
-  
-    const addAgentResponse = (data) => {
-      const output = document.getElementById("output");
-      output.innerHTML += '<div class="agent_response">' + data.output + '</div>';
-      output.scrollTop = output.scrollHeight;
-      output.style.display = "block";
-      updateScroll();
-    };
-  
-    const writeReport = (data, converter) => {
-      const reportContainer = document.getElementById("reportContainer");
-      const markdownOutput = converter.makeHtml(data.output);
-      reportContainer.innerHTML += markdownOutput;
-      updateScroll();
-    };
-  
-    const updateDownloadLink = (data) => {
-      const path = data.output;
-      document.getElementById("downloadLink").setAttribute("href", path);
-    };
-  
-    const updateScroll = () => {
-      window.scrollTo(0, document.body.scrollHeight);
-    };
-  
-    const copyToClipboard = () => {
-      const textarea = document.createElement('textarea');
-      textarea.id = 'temp_element';
-      textarea.style.height = 0;
-      document.body.appendChild(textarea);
-      textarea.value = document.getElementById('reportContainer').innerText;
-      const selector = document.querySelector('#temp_element');
-      selector.select();
-      document.execCommand('copy');
-      document.body.removeChild(textarea);
-    };
+          let formData = {
+              task: task,
+              agent: agent,
+              report_type: report_type,
+              webToggle: webToggle,
+              kbToggle: kbToggle
+          };
 
-    const updateState = (state) => {
-      var status = "";
-      switch (state) {
-        case "in_progress":
-          status = "Research in progress..."
-          setReportActionsStatus("disabled");
-          break;
-        case "finished":
-          status = "Research finished!"
-          setReportActionsStatus("enabled");
-          break;
-        case "error":
-          status = "Research failed!"
-          setReportActionsStatus("disabled");
-          break;
-        case "initial":
-          status = ""
-          setReportActionsStatus("hidden");
-          break;
-        default:
-          setReportActionsStatus("disabled");
-      }
-      document.getElementById("status").innerHTML = status;
-      if (document.getElementById("status").innerHTML == "") {
-        document.getElementById("status").style.display = "none";
-      } else {
-        document.getElementById("status").style.display = "block";
-      }
-    }
+          // Send the form data to start the research
+          this.ws.send("start" + JSON.stringify(formData));
+      });
 
-    /**
-     * Shows or hides the download and copy buttons
-     * @param {str} status Kind of hacky. Takes "enabled", "disabled", or "hidden". "Hidden is same as disabled but also hides the div"
-     */
-    const setReportActionsStatus = (status) => {
-      const reportActions = document.getElementById("reportActions");
-      // Disable everything in reportActions until research is finished
+      this.ws.addEventListener('message', (event) => {
+          let response = JSON.parse(event.data);
+          if (response.type === "logs") {
+              let outputDiv = document.getElementById("output");
+              let newLog = document.createElement("p");
+              newLog.textContent = response.output;
+              outputDiv.appendChild(newLog);
 
-      if (status == "enabled") {
-        reportActions.querySelectorAll("a").forEach((link) => {
-          link.classList.remove("disabled");
-          link.removeAttribute('onclick');
-          reportActions.style.display = "block";
-        });
-      } else {
-        reportActions.querySelectorAll("a").forEach((link) => {
-          link.classList.add("disabled");
-          link.setAttribute('onclick', "return false;");
-        });
-        if (status == "hidden") {
-          reportActions.style.display = "none";
-        }
-      }
-    }
+              // Highlight PDF access
+              if (response.output.includes("Accessing uploaded PDF:")) {
+                  newLog.style.color = "green";
+                  newLog.style.fontWeight = "bold";
+              }
+          } else if (response.type === "report") {
+              let reportContainer = document.getElementById("reportContainer");
+              reportContainer.innerHTML = markdownToHtml(response.output);
+              document.getElementById("status").innerText = "Research complete!";
+          }
+      });
+  },
+  copyToClipboard: function () {
+      let reportContainer = document.getElementById("reportContainer");
+      let text = reportContainer.innerText;
+      let textArea = document.createElement("textarea");
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textArea);
+      alert("Report copied to clipboard.");
+  }
+};
 
-    document.addEventListener("DOMContentLoaded", init);
-    return {
-      startResearch,
-      copyToClipboard,
-    };
-  })();
+function markdownToHtml(markdown) {
+  let converter = new showdown.Converter();
+  return converter.makeHtml(markdown);
+}
