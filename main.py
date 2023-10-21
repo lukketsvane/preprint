@@ -1,10 +1,9 @@
-from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect, UploadFile, File, HTTPException
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 import json
 import os
-from pathlib import Path
 
 from agent.llm_utils import choose_agent
 from agent.run import WebSocketManager
@@ -16,16 +15,15 @@ class ResearchRequest(BaseModel):
     agent: str
 
 
+
 app = FastAPI()
 app.mount("/site", StaticFiles(directory="client"), name="site")
 app.mount("/static", StaticFiles(directory="client/static"), name="static")
-
+# Dynamic directory for outputs once first research is run
 @app.on_event("startup")
 def startup_event():
     if not os.path.isdir("outputs"):
         os.makedirs("outputs")
-    if not os.path.isdir("uploads"):
-        os.makedirs("uploads")
     app.mount("/outputs", StaticFiles(directory="outputs"), name="outputs")
 
 templates = Jinja2Templates(directory="client")
@@ -36,15 +34,6 @@ manager = WebSocketManager()
 @app.get("/")
 async def read_root(request: Request):
     return templates.TemplateResponse('index.html', {"request": request, "report": None})
-
-
-@app.post("/upload_files")
-async def upload_files(files: list[UploadFile] = File(...)):
-    for file in files:
-        file_contents = await file.read()
-        with open(f'uploads/{file.filename}', 'wb') as f:
-            f.write(file_contents)
-    return {"success": True}
 
 
 @app.websocket("/ws")
@@ -58,6 +47,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 task = json_data.get("task")
                 report_type = json_data.get("report_type")
                 agent = json_data.get("agent")
+                # temporary so "normal agents" can still be used and not just auto generated, will be removed when we move to auto generated
                 if agent == "Auto Agent":
                     agent_dict = choose_agent(task)
                     agent = agent_dict.get("agent")
@@ -77,4 +67,5 @@ async def websocket_endpoint(websocket: WebSocket):
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)

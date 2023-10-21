@@ -1,6 +1,6 @@
 import asyncio
 import datetime
-from pathlib import Path
+
 from typing import List, Dict
 from fastapi import WebSocket
 from config import check_config_setup
@@ -35,23 +35,18 @@ class WebSocketManager:
         del self.message_queues[websocket]
 
     async def start_streaming(self, task, report_type, agent, agent_role_prompt, websocket):
-        # Obtain a list of all uploaded files
-        uploaded_files = [str(p) for p in Path("uploads").iterdir()]
-        
-        # Pass the uploaded files to the research agent
-        report, path = await run_agent(task, report_type, agent, agent_role_prompt, uploaded_files, websocket)
-        
+        report, path = await run_agent(task, report_type, agent, agent_role_prompt, websocket)
         return report, path
 
 
-async def run_agent(task, report_type, agent, agent_role_prompt, uploaded_files, websocket):
+async def run_agent(task, report_type, agent, agent_role_prompt, websocket):
     check_config_setup()
 
     start_time = datetime.datetime.now()
 
     # await websocket.send_json({"type": "logs", "output": f"Start time: {str(start_time)}\n\n"})
 
-    assistant = ResearchAgent(task, agent, agent_role_prompt, uploaded_files, websocket)
+    assistant = ResearchAgent(task, agent, agent_role_prompt, websocket)
     await assistant.conduct_research()
 
     report, path = await assistant.write_report(report_type, websocket)
