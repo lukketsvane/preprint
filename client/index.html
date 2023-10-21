@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>GPT Researcher</title>
+    <meta name="description" content="A research assistant powered by GPT-4">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="./static/favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/site/styles.css"/>
+    <style>
+        .avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+        }
+
+        .agent-name {
+            text-align: center;
+        }
+
+        .agent-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .agent-choices {
+            display: none;
+        }
+
+        .btn-show {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+
+<!-- JavaScript to Handle File Upload -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const uploadButton = document.getElementById("upload-button");
+        const fileInput = document.getElementById("file-input");
+
+        uploadButton.addEventListener("click", function() {
+            const files = fileInput.files;
+            if (files.length === 0) {
+                alert("Please select a file to upload.");
+                return;
+            }
+
+            // Create FormData object and append files
+            const formData = new FormData();
+            for (let i = 0; i < files.length; i++) {
+                formData.append("files", files[i]);
+            }
+
+            // Send files to server
+            fetch("/upload_files", {
+                method: "POST",
+                body: formData
+            }).then(response => response.json())
+              .then(data => {
+                  if (data.success) {
+                      alert("Files uploaded successfully.");
+                  } else {
+                      alert("Failed to upload files.");
+                  }
+              });
+        });
+    });
+</script>
+<main class="container" id="form">
+    <div class="agent-item"><img src="/static/defaultAgentAvatar.JPG" class="avatar"
+                                                alt="Auto Agent"></div>
+    <form method="POST" class="mt-3" onsubmit="GPTResearcher.startResearch(); return false;">
+        <div class="form-group">
+            <label for="task" class="agent-question">What would you like me to research next?</label>
+            <input type="text" id="task" name="task" class="form-control" required>
+            <input type="radio" name="agent" id="autoAgent" value="Auto Agent" checked hidden>
+        </div>
+        <div class="form-group">
+            <div class="row">
+
+
+            </div>
+            <button type="button" id="btnShowAuto" class="btn btn-secondary mt-3 btn-show">Auto Agent</button>
+        </div>
+        <!-- File Upload Form -->
+        <div id="file-upload-div">
+            <h3>Upload .txt or .pdf Files</h3>
+            <input type="file" id="file-input" multiple accept=".txt,.pdf">
+            <button id="upload-button">Upload</button>
+        </div>
+    
+        <!-- Toggle for enabling web search -->
+        <div class="toggle-container">
+            <label for="webSearchToggle">Enable Web Search:</label>
+            <input type="checkbox" id="webSearchToggle" name="webSearchToggle">
+        </div>
+
+        <div class="form-group">
+            <label for="report_type" class="agent-question">What type of report would you like me to generate?</label>
+            <select name="report_type" class="form-control" required>
+                <option value="research_report">Research Report</option>
+                <option value="resource_report">Resource Report</option>
+                <option value="outline_report">Outline Report</option>
+            </select>
+        </div>
+        <input type="submit" value="Research" class="btn btn-primary button-padding">
+    </form>
+<!-- Toggle for enabling web search -->
+
+
+    <div class="margin-div">
+        <h2>Agent Output</h2>
+        <p class="mt-2 text-left" style="font-size: 0.8rem;">An agent tailored specifically to your task
+                        will be generated to provide the most precise and relevant research results.</p>
+        <div id="output"></div>
+    </div>
+    <div class="margin-div">
+        <h2>Research Report</h2>
+        <div id="reportContainer"></div>
+        <div id="reportActions">
+            <div class="alert alert-info" role="alert" id="status"></div>
+            <a onclick="GPTResearcher.copyToClipboard()" class="btn btn-secondary mt-3">Copy to clipboard</button>
+            <a id="downloadLink" href="#" class="btn btn-secondary mt-3" target="_blank">Download as PDF</a>
+        </div>
+    </div>
+</main>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/1.9.1/showdown.min.js"></script>
+<script src="/site/scripts.js"></script>
+<script>
+    // const btnChoose = document.getElementById('btnChoose');
+    const btnShowAuto = document.getElementById('btnShowAuto');
+    const autoAgentDiv = document.getElementById('autoAgentDiv');
+    const agentChoices = document.getElementsByClassName('agent-choices');
+
+    /**
+    btnChoose.addEventListener('click', function () {
+        btnShowAuto.style.display = 'inline-block';
+        btnChoose.style.display = 'none';
+        autoAgentDiv.style.display = 'none';
+        agentChoices[0].style.display = 'flex';
+    });
+    **/
+
+    btnShowAuto.addEventListener('click', function () {
+        btnShowAuto.style.display = 'none';
+        btnChoose.style.display = 'inline-block';
+        autoAgentDiv.style.display = 'flex';
+        agentChoices[0].style.display = 'none';
+    });
+</script>
+
+
+</body>
+
+</html>
